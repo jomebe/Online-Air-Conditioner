@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>온라인 에어컨 | Online Air Conditioner</title>
+    <meta name="description" content="시원한 바람과 소리를 선사하는 온라인 가상 에어컨입니다. 온도 조절, 실시간 전기세 계산, 백색 소음 기능 탑재.">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body data-theme="day">
+
+    <header>
+        <div class="brand">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <h1 data-localize="title">온라인 에어컨</h1>
+        </div>
+        
+        <div class="controls-header">
+            <!-- Language Toggle -->
+            <button class="btn-icon" id="btn-lang" title="Toggle Language">
+                <span style="font-weight: 700; font-size: 0.85rem;" id="lang-indicator">EN</span>
+            </button>
+            
+            <!-- Sound Status Toggle -->
+            <button class="btn-icon" id="btn-sound-global" title="Toggle Sound">
+                <span class="btn-icon-label" id="sound-global-icon">🔊</span>
+            </button>
+            
+            <!-- Theme Selector -->
+            <div class="theme-selector">
+                <button class="theme-btn active" data-theme-val="day" title="Day Mode">☀️</button>
+                <button class="theme-btn" data-theme-val="sunset" title="Sunset Mode">🌇</button>
+                <button class="theme-btn" data-theme-val="night" title="Night Mode">🌙</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Room Container -->
+        <section class="room-container">
+            <!-- AC Unit on the wall -->
+            <div class="ac-unit-wrapper">
+                <div class="ac-unit" id="ac-unit" data-mode="cool">
+                    <div class="ac-intake"></div>
+                    <div class="ac-brand-logo">ANTIGRAVITY</div>
+                    <div class="ac-display" id="ac-led-display">--</div>
+                    <div class="ac-flap" id="ac-flap"></div>
+                </div>
+                
+                <!-- Animated Wind Breezes -->
+                <div class="wind-container">
+                    <div class="wind-line"></div>
+                    <div class="wind-line"></div>
+                    <div class="wind-line"></div>
+                    <div class="wind-line"></div>
+                    <div class="wind-line"></div>
+                    <div class="wind-line"></div>
+                </div>
+            </div>
+
+            <!-- Sleeping Cat Animation -->
+            <div class="cat-container" id="cat-container" title="쓰다듬어 주세요!">
+                <svg class="cat-svg" viewBox="0 0 100 60">
+                    <!-- Sleeping Zzz animation text nodes -->
+                    <text x="75" y="15" class="cat-z1">z</text>
+                    <text x="82" y="22" class="cat-z2">Z</text>
+                    <text x="89" y="12" class="cat-z3">z</text>
+                    
+                    <!-- Cat Body -->
+                    <g class="cat-body">
+                        <!-- Tail -->
+                        <path class="cat-tail" d="M15,40 C10,35 5,42 8,48 C10,52 18,50 18,45" fill="none" stroke="#f97316" stroke-width="6" stroke-linecap="round" />
+                        <!-- Feet / Underbelly -->
+                        <ellipse cx="50" cy="48" rx="32" ry="10" fill="#ea580c" />
+                        <!-- Body Oval -->
+                        <ellipse cx="50" cy="42" rx="28" ry="18" fill="#f97316" />
+                        <ellipse cx="50" cy="42" rx="24" ry="14" fill="#fb923c" />
+                        <!-- Cat Head -->
+                        <circle cx="72" cy="35" r="14" fill="#f97316" />
+                        <circle cx="72" cy="35" r="11" fill="#fb923c" />
+                        <!-- Left Ear -->
+                        <polygon points="62,25 65,12 73,23" fill="#f97316" />
+                        <polygon points="64,23 66,15 71,22" fill="#fca5a5" />
+                        <!-- Right Ear -->
+                        <polygon points="82,25 79,12 71,23" fill="#f97316" />
+                        <polygon points="80,23 78,15 73,22" fill="#fca5a5" />
+                        <!-- Closed Eyes (sleeping) -->
+                        <path d="M64,34 Q67,37 70,34" fill="none" stroke="#7c2d12" stroke-width="1.5" stroke-linecap="round" />
+                        <path d="M74,34 Q77,37 80,34" fill="none" stroke="#7c2d12" stroke-width="1.5" stroke-linecap="round" />
+                        <!-- Nose and Whiskers -->
+                        <polygon points="71,37 73,37 72,39" fill="#7c2d12" />
+                        <line x1="68" y1="39" x2="62" y2="40" stroke="#fdba74" stroke-width="1" />
+                        <line x1="68" y1="41" x2="63" y2="43" stroke="#fdba74" stroke-width="1" />
+                        <line x1="76" y1="39" x2="82" y2="40" stroke="#fdba74" stroke-width="1" />
+                        <line x1="76" y1="41" x2="81" y2="43" stroke="#fdba74" stroke-width="1" />
+                    </g>
+                </svg>
+            </div>
+
+            <!-- Room Environment & Electricity stats -->
+            <div class="status-grid">
+                <div class="status-card">
+                    <span class="status-label" data-localize="room_temp">실내 온도</span>
+                    <div class="status-value">
+                        <span id="room-temp-val">28.0</span><span class="status-unit">°C</span>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <span class="status-label" data-localize="outdoor_temp">실외 온도</span>
+                    <div class="status-value">
+                        <span id="outdoor-temp-val">31.5</span><span class="status-unit">°C</span>
+                    </div>
+                </div>
+                
+                <div class="status-card">
+                    <span class="status-label" data-localize="electricity_cost">누적 전기세</span>
+                    <div class="status-value">
+                        <span id="cost-val">0</span><span class="status-unit" id="currency-unit">원</span>
+                    </div>
+                    <div style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 4px;">
+                        <span id="power-val">0</span>W (<span id="kwh-val">0.000</span> kWh)
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Remote Control Wrapper -->
+        <section class="remote-wrapper">
+            <div class="remote">
+                <!-- LCD Screen -->
+                <div class="remote-screen" id="remote-screen">
+                    <div class="screen-top">
+                        <span id="screen-signal">📶</span>
+                        <span id="screen-clock">13:48</span>
+                        <span id="screen-battery">🔋</span>
+                    </div>
+                    
+                    <div class="screen-middle">
+                        <div class="screen-temp" id="screen-temp-display">
+                            --<span class="screen-temp-unit">°C</span>
+                        </div>
+                        <div class="screen-status-icons">
+                            <span id="screen-mode-text" style="font-weight: bold;">COOL</span>
+                            <span id="screen-mode-icon">❄️</span>
+                        </div>
+                    </div>
+                    
+                    <div class="screen-bottom">
+                        <span id="screen-speed">SPD: AUTO</span>
+                        <span id="screen-swing">SWING ⇳</span>
+                        <span id="screen-extra"></span>
+                    </div>
+                </div>
+
+                <!-- Tactile Buttons -->
+                <div class="remote-buttons">
+                    <!-- Power Button -->
+                    <button class="btn-remote btn-power" id="btn-power">
+                        <span class="btn-icon-label">⏻</span>
+                        <span data-localize="btn_power">전원</span>
+                    </button>
+                    
+                    <!-- Temp Up -->
+                    <button class="btn-remote" id="btn-temp-up">
+                        <span class="btn-icon-label">▲</span>
+                        <span data-localize="btn_temp_up">온도 올림</span>
+                    </button>
+                    
+                    <!-- Temp Down -->
+                    <button class="btn-remote" id="btn-temp-down">
+                        <span class="btn-icon-label">▼</span>
+                        <span data-localize="btn_temp_down">온도 내림</span>
+                    </button>
+                    
+                    <!-- Mode Selector -->
+                    <button class="btn-remote" id="btn-mode">
+                        <span class="btn-icon-label">🎛️</span>
+                        <span data-localize="btn_mode">모드</span>
+                    </button>
+                    
+                    <!-- Fan Speed -->
+                    <button class="btn-remote" id="btn-speed">
+                        <span class="btn-icon-label">🌀</span>
+                        <span data-localize="btn_speed">풍량</span>
+                    </button>
+                    
+                    <!-- Flap Swing -->
+                    <button class="btn-remote" id="btn-swing">
+                        <span class="btn-icon-label">⇳</span>
+                        <span data-localize="btn_swing">송풍방향</span>
+                    </button>
+                    
+                    <!-- Eco Mode -->
+                    <button class="btn-remote" id="btn-eco">
+                        <span class="btn-icon-label">🌱</span>
+                        <span data-localize="btn_eco">절전</span>
+                    </button>
+                    
+                    <!-- Turbo Mode -->
+                    <button class="btn-remote" id="btn-turbo">
+                        <span class="btn-icon-label">⚡</span>
+                        <span data-localize="btn_turbo">터보</span>
+                    </button>
+                    
+                    <!-- Sound / Mute Toggle -->
+                    <button class="btn-remote" id="btn-mute">
+                        <span class="btn-icon-label" id="btn-mute-icon">🔊</span>
+                        <span data-localize="btn_mute" id="btn-mute-text">소리 켬</span>
+                    </button>
+
+                    <!-- Ambient Sound Cycle -->
+                    <button class="btn-remote" id="btn-ambient" style="grid-column: span 3; height: 44px; display: flex; flex-direction: row; gap: 8px;">
+                        <span>🍂</span>
+                        <span data-localize="btn_ambient">주변 백색소음: 꺼짐</span>
+                    </button>
+                </div>
+
+                <!-- Energy Rating Sticker (Pure CSS) -->
+                <div class="energy-label">
+                    <span data-localize="energy_label">에너지소비효율등급</span>
+                    <span class="energy-rating">1</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>
+            &copy; 2026 <span data-localize="footer_text">온라인 에어컨. 소리 조절을 활성화하고 바람 소리를 즐겨보세요!</span>
+        </p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

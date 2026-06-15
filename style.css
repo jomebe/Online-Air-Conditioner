@@ -1,0 +1,788 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap');
+
+:root {
+    /* Fonts */
+    --font-sans: 'Outfit', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+
+    /* Theme Colors (Default Day) */
+    --bg-gradient: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 40%, #fed7aa 100%);
+    --room-bg: rgba(255, 255, 255, 0.35);
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --shadow-color: rgba(15, 23, 42, 0.08);
+    --border-color: rgba(255, 255, 255, 0.5);
+
+    /* Glassmorphism settings */
+    --glass-bg: rgba(255, 255, 255, 0.45);
+    --glass-border: rgba(255, 255, 255, 0.4);
+    --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+    /* AC State Glows */
+    --glow-cool: 0 0 15px rgba(14, 165, 233, 0.6);
+    --glow-heat: 0 0 15px rgba(249, 115, 22, 0.6);
+    --glow-eco: 0 0 15px rgba(34, 197, 94, 0.6);
+    --glow-dry: 0 0 15px rgba(168, 85, 247, 0.6);
+    --glow-fan: 0 0 15px rgba(100, 116, 139, 0.4);
+
+    /* Transition */
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sunset Theme */
+[data-theme="sunset"] {
+    --bg-gradient: linear-gradient(135deg, #fda4af 0%, #f472b6 30%, #701a75 100%);
+    --room-bg: rgba(255, 255, 255, 0.2);
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --shadow-color: rgba(0, 0, 0, 0.2);
+    --border-color: rgba(255, 255, 255, 0.2);
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-border: rgba(255, 255, 255, 0.25);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Night Theme */
+[data-theme="night"] {
+    --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+    --room-bg: rgba(15, 23, 42, 0.6);
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --shadow-color: rgba(0, 0, 0, 0.4);
+    --border-color: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(15, 23, 42, 0.5);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    font-family: var(--font-sans);
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: var(--transition);
+    overflow-x: hidden;
+}
+
+header {
+    width: 100%;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 10;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.brand h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    background: linear-gradient(to right, #0284c7, #06b6d4);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+[data-theme="sunset"] .brand h1,
+[data-theme="night"] .brand h1 {
+    background: linear-gradient(to right, #38bdf8, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.controls-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.btn-icon {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    color: var(--text-primary);
+    padding: 0.5rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+    width: 40px;
+    height: 40px;
+}
+
+.btn-icon:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.theme-selector {
+    display: flex;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    padding: 0.25rem;
+    border-radius: 20px;
+    gap: 0.25rem;
+}
+
+.theme-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.theme-btn.active {
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="night"] .theme-btn.active {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* App Container Layout */
+main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 2rem;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+    align-items: center;
+}
+
+@media (max-width: 1024px) {
+    main {
+        grid-template-columns: 1fr;
+        padding: 1.5rem;
+        gap: 1.5rem;
+    }
+}
+
+/* Left Room Section */
+.room-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: var(--room-bg);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(16px);
+    border-radius: 24px;
+    padding: 3rem 2rem 2rem;
+    height: 100%;
+    min-height: 500px;
+    box-shadow: var(--glass-shadow);
+    transition: var(--transition);
+}
+
+/* Split Air Conditioner Unit Styling */
+.ac-unit-wrapper {
+    position: relative;
+    width: 100%;
+    max-width: 580px;
+    margin-bottom: 4rem;
+}
+
+.ac-unit {
+    position: relative;
+    width: 100%;
+    height: 140px;
+    background: linear-gradient(to bottom, #ffffff 0%, #f1f5f9 60%, #e2e8f0 100%);
+    border-radius: 12px 12px 18px 18px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08), 
+                inset 0 2px 2px rgba(255, 255, 255, 0.8),
+                inset 0 -6px 10px rgba(0, 0, 0, 0.05);
+    border: 1px solid #cbd5e1;
+    z-index: 5;
+    transition: var(--transition);
+}
+
+/* AC LED display */
+.ac-display {
+    position: absolute;
+    right: 50px;
+    top: 35px;
+    background: #000;
+    color: #475569; /* off color */
+    font-family: var(--font-mono);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 1.25rem;
+    text-align: right;
+    width: 85px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.8);
+    transition: var(--transition);
+}
+
+.ac-unit.on .ac-display {
+    color: #0ea5e9;
+    text-shadow: var(--glow-cool);
+}
+
+.ac-unit.on[data-mode="heat"] .ac-display {
+    color: #f97316;
+    text-shadow: var(--glow-heat);
+}
+
+.ac-unit.on[data-mode="eco"] .ac-display {
+    color: #22c55e;
+    text-shadow: var(--glow-eco);
+}
+
+.ac-unit.on[data-mode="dry"] .ac-display {
+    color: #a855f7;
+    text-shadow: var(--glow-dry);
+}
+
+.ac-unit.on[data-mode="fan"] .ac-display {
+    color: #e2e8f0;
+    text-shadow: var(--glow-fan);
+}
+
+/* AC flap/deflector */
+.ac-flap {
+    position: absolute;
+    bottom: -2px;
+    left: 4%;
+    width: 92%;
+    height: 12px;
+    background: linear-gradient(to bottom, #e2e8f0, #cbd5e1);
+    border-radius: 0 0 6px 6px;
+    border: 1px solid #94a3b8;
+    transform-origin: top center;
+    transform: rotateX(0deg);
+    transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 6;
+}
+
+.ac-unit.on .ac-flap {
+    transform: rotateX(50deg);
+}
+
+.ac-unit.on.swing .ac-flap {
+    animation: ac-swing 3s ease-in-out infinite alternate;
+}
+
+@keyframes ac-swing {
+    0% { transform: rotateX(30deg); }
+    100% { transform: rotateX(75deg); }
+}
+
+/* Logo mark on AC */
+.ac-brand-logo {
+    position: absolute;
+    left: 40px;
+    bottom: 25px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #94a3b8;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* Intake grill at the top */
+.ac-intake {
+    position: absolute;
+    top: 0;
+    left: 5%;
+    width: 90%;
+    height: 8px;
+    background: repeating-linear-gradient(90deg, #94a3b8, #94a3b8 2px, transparent 2px, transparent 6px);
+    opacity: 0.3;
+}
+
+/* Wind Breeze Animation */
+.wind-container {
+    position: absolute;
+    top: 138px;
+    left: 8%;
+    width: 84%;
+    height: 160px;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 4;
+    display: flex;
+    justify-content: space-around;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.ac-unit.on ~ .wind-container {
+    opacity: 1;
+}
+
+.wind-line {
+    width: 2px;
+    background: linear-gradient(to bottom, rgba(14, 165, 233, 0.4), transparent);
+    height: 100%;
+    transform: translateY(-100%);
+    animation: wind-flow 1.5s infinite linear;
+}
+
+.ac-unit.on[data-mode="heat"] ~ .wind-container .wind-line {
+    background: linear-gradient(to bottom, rgba(249, 115, 22, 0.4), transparent);
+}
+
+.ac-unit.on[data-mode="eco"] ~ .wind-container .wind-line {
+    background: linear-gradient(to bottom, rgba(34, 197, 94, 0.4), transparent);
+}
+
+.ac-unit.on[data-mode="dry"] ~ .wind-container .wind-line {
+    background: linear-gradient(to bottom, rgba(168, 85, 247, 0.4), transparent);
+}
+
+.ac-unit.on[data-mode="fan"] ~ .wind-container .wind-line {
+    background: linear-gradient(to bottom, rgba(226, 232, 240, 0.4), transparent);
+}
+
+.wind-line:nth-child(1) { animation-delay: 0.2s; animation-duration: 1.2s; }
+.wind-line:nth-child(2) { animation-delay: 0.8s; animation-duration: 1.6s; }
+.wind-line:nth-child(3) { animation-delay: 0.5s; animation-duration: 1.4s; }
+.wind-line:nth-child(4) { animation-delay: 1.1s; animation-duration: 1.1s; }
+.wind-line:nth-child(5) { animation-delay: 0.1s; animation-duration: 1.5s; }
+.wind-line:nth-child(6) { animation-delay: 0.6s; animation-duration: 1.3s; }
+
+/* Dynamic speed animation control */
+.ac-unit.on.speed-low ~ .wind-container .wind-line {
+    animation-duration: 2.2s;
+    opacity: 0.5;
+}
+.ac-unit.on.speed-medium ~ .wind-container .wind-line {
+    animation-duration: 1.5s;
+    opacity: 0.8;
+}
+.ac-unit.on.speed-high ~ .wind-container .wind-line {
+    animation-duration: 0.8s;
+    opacity: 1;
+}
+.ac-unit.on.speed-auto ~ .wind-container .wind-line {
+    animation-duration: 1.3s;
+    opacity: 0.75;
+}
+
+@keyframes wind-flow {
+    0% {
+        transform: translateY(-100%) skewX(-5deg);
+        opacity: 0;
+    }
+    30% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(100%) skewX(-15deg);
+        opacity: 0;
+    }
+}
+
+/* Room Environment Status Display */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 600px;
+    margin-top: 1rem;
+}
+
+.status-card {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.status-card:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.55);
+}
+
+[data-theme="night"] .status-card:hover {
+    background: rgba(15, 23, 42, 0.7);
+}
+
+.status-label {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+}
+
+.status-unit {
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-left: 2px;
+}
+
+/* Sleeping Cat Vector Container */
+.cat-container {
+    position: absolute;
+    bottom: 20px;
+    left: 40px;
+    width: 120px;
+    height: 80px;
+    cursor: pointer;
+}
+
+.cat-svg {
+    width: 100%;
+    height: 100%;
+    transform-origin: bottom center;
+}
+
+/* Cat animation states */
+.cat-body {
+    transform-origin: center bottom;
+    animation: cat-breathe 3s ease-in-out infinite alternate;
+}
+
+.cat-tail {
+    transform-origin: 20% 80%;
+    animation: cat-wag 4s ease-in-out infinite alternate;
+}
+
+.cat-z1, .cat-z2, .cat-z3 {
+    opacity: 0;
+    fill: var(--text-secondary);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.ac-unit.on ~ .cat-container .cat-z1 {
+    animation: z-fly 3s infinite 0s;
+}
+.ac-unit.on ~ .cat-container .cat-z2 {
+    animation: z-fly 3s infinite 1s;
+}
+.ac-unit.on ~ .cat-container .cat-z3 {
+    animation: z-fly 3s infinite 2s;
+}
+
+@keyframes cat-breathe {
+    0% { transform: scaleY(0.96) scaleX(1); }
+    100% { transform: scaleY(1.04) scaleX(0.98); }
+}
+
+@keyframes cat-wag {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(15deg); }
+}
+
+@keyframes z-fly {
+    0% { transform: translate(0, 0) scale(0.6); opacity: 0; }
+    50% { opacity: 0.6; }
+    100% { transform: translate(20px, -30px) scale(1.2); opacity: 0; }
+}
+
+/* Right Remote Control Section */
+.remote-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.remote {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 3px solid #cbd5e1;
+    border-radius: 32px;
+    box-shadow: 0 20px 40px rgba(15, 23, 42, 0.15), 
+                inset 0 1px 1px #fff;
+    width: 100%;
+    max-width: 320px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    position: relative;
+    transition: var(--transition);
+}
+
+[data-theme="night"] .remote {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-color: #334155;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), 
+                inset 0 1px 1px rgba(255, 255, 255, 0.05);
+}
+
+/* Remote LCD Screen styling */
+.remote-screen {
+    background: #c2d6c2; /* Classic greenish LCD */
+    border: 4px solid #94a3b8;
+    border-radius: 12px;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-mono);
+    color: #2b3a2b;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.2), 
+                0 2px 4px rgba(255, 255, 255, 0.8);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    height: 120px;
+    position: relative;
+    overflow: hidden;
+    transition: var(--transition);
+}
+
+[data-theme="night"] .remote-screen {
+    border-color: #475569;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* LCD Backlight when ON */
+.remote-screen.backlight-active {
+    background: #a5f3fc; /* Bright cyan glow */
+    color: #083344;
+    border-color: #06b6d4;
+    box-shadow: inset 0 2px 6px rgba(6, 182, 212, 0.3), 
+                0 0 15px rgba(6, 182, 212, 0.4);
+}
+
+.screen-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.screen-middle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1;
+}
+
+.screen-temp {
+    font-size: 2.75rem;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: flex-start;
+}
+
+.screen-temp-unit {
+    font-size: 1.25rem;
+    margin-top: 4px;
+}
+
+.screen-status-icons {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.screen-bottom {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+}
+
+/* Remote button grid */
+.remote-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.btn-remote {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 16px;
+    color: #334155;
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8),
+                0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s ease;
+    user-select: none;
+}
+
+[data-theme="night"] .btn-remote {
+    background: #334155;
+    border-color: #475569;
+    color: #f1f5f9;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.btn-remote:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.1),
+                inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.btn-remote:hover {
+    background: #e2e8f0;
+}
+
+[data-theme="night"] .btn-remote:hover {
+    background: #475569;
+}
+
+/* Power button highlighted */
+.btn-remote.btn-power {
+    background: #fecaca;
+    border-color: #fca5a5;
+    color: #991b1b;
+}
+
+[data-theme="night"] .btn-remote.btn-power {
+    background: #7f1d1d;
+    border-color: #991b1b;
+    color: #fecaca;
+}
+
+.btn-remote.btn-power.active {
+    background: #bbf7d0;
+    border-color: #86efac;
+    color: #166534;
+}
+
+[data-theme="night"] .btn-remote.btn-power.active {
+    background: #14532d;
+    border-color: #166534;
+    color: #bbf7d0;
+}
+
+/* Temp adjustments spanning two columns */
+.temp-controls {
+    grid-column: span 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.btn-temp-adjust {
+    height: 48px;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+/* Highlight active states in buttons */
+.btn-remote.active-feature {
+    background: #bae6fd;
+    border-color: #7dd3fc;
+    color: #0369a1;
+}
+
+[data-theme="night"] .btn-remote.active-feature {
+    background: #0c4a6e;
+    border-color: #0284c7;
+    color: #e0f2fe;
+}
+
+.btn-icon-label {
+    font-size: 1.1rem;
+}
+
+/* Dynamic Energy Label details */
+.energy-label {
+    background: #eab308;
+    color: #000;
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.energy-rating {
+    background: #000;
+    color: #fff;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Footer details */
+footer {
+    padding: 1.5rem;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+}
+
+footer a {
+    color: inherit;
+    text-decoration: underline;
+}
+
+/* Utility Animations */
+.pulse-glow {
+    animation: glow-pulse 2s infinite alternate;
+}
+
+@keyframes glow-pulse {
+    0% { opacity: 0.6; }
+    100% { opacity: 1; }
+}
