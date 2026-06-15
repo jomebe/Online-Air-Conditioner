@@ -241,20 +241,34 @@ header {
     display: flex;
     justify-content: center;
     width: 100%;
-    max-width: 1800px;
+    max-width: 1250px;
     margin: 0 auto;
-    padding: 0 1rem;
-    gap: 1.5rem;
+    padding: 0 1.5rem;
+    position: relative;
 }
 
-.sidebar-left, .sidebar-right {
-    width: 165px;
-    flex-shrink: 0;
+.sidebar-left {
+    position: fixed;
+    left: 20px;
+    top: 120px;
+    width: 160px;
+    z-index: 100;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.5rem;
-    padding-top: 2rem;
+}
+
+.sidebar-right {
+    position: fixed;
+    right: 20px;
+    top: 120px;
+    width: 160px;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .ad-slot-label {
@@ -342,7 +356,7 @@ header {
 }
 
 /* Hide Skyscraper Sidebars on smaller screens */
-@media (max-width: 1400px) {
+@media (max-width: 1560px) {
     .sidebar-left, .sidebar-right {
         display: none;
     }
@@ -355,10 +369,10 @@ main {
     grid-template-columns: 1fr 380px;
     gap: 2rem;
     padding: 2rem 0;
-    align-items: center;
+    align-items: start;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1150px) {
     main {
         grid-template-columns: 1fr;
         padding: 1.5rem 0;
@@ -646,12 +660,12 @@ main {
 
 /* Sleeping Cat Vector Container */
 .cat-container {
-    position: absolute;
-    bottom: 20px;
-    left: 40px;
+    position: relative;
+    margin: 1.5rem auto 2.5rem;
     width: 120px;
     height: 80px;
     cursor: pointer;
+    z-index: 5;
 }
 
 .cat-svg {
