@@ -675,6 +675,12 @@ function updateUI() {
 
 // --- MULTIPLAYER REAL-TIME SYNC LOGIC (MQTT) ---
 
+// Determine if this browser is the Room's master host
+function isHost() {
+    const keys = Object.keys(activeUsers).sort();
+    return keys[0] === mySenderId;
+}
+
 function updateNetworkStatus(status) {
     dom.networkStatusDot.className = 'status-dot ' + status;
 }
@@ -692,7 +698,9 @@ function publishState(type = 'state') {
             fanSpeed: state.fanSpeed,
             isSwing: state.isSwing,
             isEco: state.isEco,
-            isTurbo: state.isTurbo
+            isTurbo: state.isTurbo,
+            kwhUsage: state.kwhUsage,
+            costAccumulated: state.costAccumulated
         }
     };
     
@@ -727,6 +735,10 @@ function handleIncomingMessage(data) {
         state.isEco = s.isEco;
         state.isTurbo = s.isTurbo;
         
+        // Sync electricity consumption stats
+        state.kwhUsage = s.kwhUsage;
+        state.costAccumulated = s.costAccumulated;
+        
         // Play audio feedback for remote users
         if (powerChanged) {
             if (state.isOn) {
@@ -747,6 +759,12 @@ function handleIncomingMessage(data) {
     } else if (data.type === 'state_request') {
         // Send our current state back to help the new peer synchronize
         publishState('state_response');
+        
+    } else if (data.type === 'sync') {
+        // Synchronize master host electricity counters
+        state.kwhUsage = data.kwhUsage;
+        state.costAccumulated = data.costAccumulated;
+        updateUI();
         
     } else if (data.type === 'meow') {
         playMeow();
@@ -851,17 +869,28 @@ function connectMultiplayer() {
     }
 }
 
-// Broadcast periodic ping to keep peer presence maps fresh
+// Broadcast periodic ping / sync to keep peer presence and electricity stats aligned
 setInterval(() => {
     if (client && client.connected) {
         const topic = `online-air-conditioner/rooms/${state.roomId}`;
-        client.publish(topic, JSON.stringify({
-            type: 'ping',
-            senderId: mySenderId
-        }));
+        if (isHost()) {
+            // Host sends sync message containing authoritative electricity stats
+            client.publish(topic, JSON.stringify({
+                type: 'sync',
+                senderId: mySenderId,
+                kwhUsage: state.kwhUsage,
+                costAccumulated: state.costAccumulated
+            }));
+        } else {
+            // Ordinary client pings presence
+            client.publish(topic, JSON.stringify({
+                type: 'ping',
+                senderId: mySenderId
+            }));
+        }
     }
     updateUsersCountDisplay();
-}, 8000);
+}, 5000); // Synchronize every 5 seconds
 
 // Room switching event handler
 dom.roomInput.addEventListener('change', () => {
@@ -877,6 +906,10 @@ dom.roomInput.addEventListener('change', () => {
     // Update state and URL
     state.roomId = newRoom;
     window.history.pushState({}, '', `?room=${encodeURIComponent(newRoom)}`);
+    
+    // Reset electricity stats when changing rooms
+    state.kwhUsage = 0.0;
+    state.costAccumulated = 0.0;
     
     // Clear other active users list when entering a new room
     activeUsers = {};
@@ -1136,6 +1169,8 @@ setInterval(() => {
     // kWh += (Power (W) / 1000 kW) * (60s / 3600s/h) = W / 60000
     const powerWatts = calculateCurrentPower();
     const stepKwh = powerWatts / 60000;
+    
+    // Accumulate locally for smooth display ticking
     state.kwhUsage += stepKwh;
     
     // Calculate cost based on currency
