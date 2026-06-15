@@ -23,7 +23,7 @@ const localization = {
         btn_ambient_crickets: "🌙 풀벌레 소리",
         btn_ambient_campfire: "🔥 모닥불 소리",
         energy_label: "에너지소비효율등급",
-        footer_text: "온라인 에어컨. 소리 조절을 활성화하고 바람 소리를 즐겨보세요! 에어컨을 켜면 실내 온도가 내려가고 전기세가 실시간으로 계산됩니다.",
+        footer_text: "온라인 에어컨. 소리 조절을 활성화하고 바람 소리를 즐겨보세요! 에어컨을 켜면 실내 온도가 내려가고 전기세가 실시간으로 계산됩니다. 같은 방에 접속한 사람들과 에어컨을 공유하여 실시간으로 동시 조절할 수 있습니다.",
         cat_pant: "냥이가 더워합니다! 에어컨을 켜주세요.",
         cat_sleep: "냥이가 시원하게 자고 있습니다."
     },
@@ -32,7 +32,7 @@ const localization = {
         room_temp: "Room Temp",
         outdoor_temp: "Outdoor Temp",
         electricity_cost: "Est. Cost",
-        currency_unit: "KRW", // We can keep KRW or use USD ($) if English. Let's make it $ for EN!
+        currency_unit: "KRW",
         btn_power: "Power",
         btn_temp_up: "Temp Up",
         btn_temp_down: "Temp Down",
@@ -50,14 +50,22 @@ const localization = {
         btn_ambient_crickets: "🌙 Crickets",
         btn_ambient_campfire: "🔥 Campfire",
         energy_label: "ENERGY RATING",
-        footer_text: "Online Air Conditioner. Turn on sound and enjoy the breeze! Turning on the AC cools the room and calculates electricity costs in real-time.",
+        footer_text: "Online Air Conditioner. Turn on sound and enjoy the breeze! Turning on the AC cools the room and calculates electricity costs in real-time. Share the room with others to control the AC concurrently in real-time.",
         cat_pant: "The kitty is hot! Please turn on the AC.",
         cat_sleep: "The kitty is sleeping comfortably."
     }
 };
 
+// Generate a unique client sender ID
+const mySenderId = 'user_' + Math.random().toString(36).substring(2, 9);
+
+// Parse Room ID from URL query parameters (defaults to 'Lobby')
+const urlParams = new URLSearchParams(window.location.search);
+let initialRoom = urlParams.get('room') || 'Lobby';
+
 // Application State Variables
 let state = {
+    roomId: initialRoom,
     isOn: false,
     mode: 'cool', // 'cool', 'heat', 'fan', 'dry'
     targetTemp: 24,
@@ -73,6 +81,11 @@ let state = {
     costAccumulated: 0.0,
     lang: 'ko'
 };
+
+// Multiplayer state variables
+let client = null;
+let activeUsers = {};
+activeUsers[mySenderId] = Date.now(); // Add self to list
 
 // Web Audio API Elements
 let audioCtx = null;
@@ -98,6 +111,12 @@ const dom = {
     kwh: document.getElementById('kwh-val'),
     cost: document.getElementById('cost-val'),
     currencyUnit: document.getElementById('currency-unit'),
+    
+    // Multiplayer controls in header
+    networkStatusDot: document.getElementById('network-status-dot'),
+    roomInput: document.getElementById('room-input'),
+    btnCopyRoom: document.getElementById('btn-copy-room'),
+    activeUsersCount: document.getElementById('active-users-count'),
     
     // Remote LCD Screen
     remoteScreen: document.getElementById('remote-screen'),
@@ -127,6 +146,9 @@ const dom = {
     
     catContainer: document.getElementById('cat-container')
 };
+
+// Set room input value initially
+dom.roomInput.value = state.roomId;
 
 // Theme selection controls
 const themeBtns = document.querySelectorAll('.theme-btn');
@@ -180,6 +202,7 @@ function setLanguage(lang) {
     // Update cat tooltip and ambient button text
     updateCatTooltip();
     updateAmbientButtonText();
+    updateUsersCountDisplay();
 }
 
 dom.btnLang.addEventListener('click', () => {
@@ -649,7 +672,247 @@ function updateUI() {
     updateCatTooltip();
 }
 
-// Remote Action Handlers
+
+// --- MULTIPLAYER REAL-TIME SYNC LOGIC (MQTT) ---
+
+function updateNetworkStatus(status) {
+    dom.networkStatusDot.className = 'status-dot ' + status;
+}
+
+function publishState(type = 'state') {
+    if (!client || !client.connected) return;
+    
+    const payload = {
+        type: type,
+        senderId: mySenderId,
+        state: {
+            isOn: state.isOn,
+            mode: state.mode,
+            targetTemp: state.targetTemp,
+            fanSpeed: state.fanSpeed,
+            isSwing: state.isSwing,
+            isEco: state.isEco,
+            isTurbo: state.isTurbo
+        }
+    };
+    
+    const topic = `online-air-conditioner/rooms/${state.roomId}`;
+    client.publish(topic, JSON.stringify(payload));
+}
+
+function handleIncomingMessage(data) {
+    if (data.senderId === mySenderId) return; // Skip own echo
+    
+    // Track presence on any incoming message
+    trackPresence(data.senderId);
+    
+    if (data.type === 'state' || data.type === 'state_response') {
+        const s = data.state;
+        
+        // Detect differences to trigger local sounds
+        const powerChanged = state.isOn !== s.isOn;
+        const tempChanged = state.targetTemp !== s.targetTemp;
+        const modeChanged = state.mode !== s.mode;
+        const speedChanged = state.fanSpeed !== s.fanSpeed;
+        const ecoChanged = state.isEco !== s.isEco;
+        const turboChanged = state.isTurbo !== s.isTurbo;
+        const swingChanged = state.isSwing !== s.isSwing;
+        
+        // Assign new state variables
+        state.isOn = s.isOn;
+        state.mode = s.mode;
+        state.targetTemp = s.targetTemp;
+        state.fanSpeed = s.fanSpeed;
+        state.isSwing = s.isSwing;
+        state.isEco = s.isEco;
+        state.isTurbo = s.isTurbo;
+        
+        // Play audio feedback for remote users
+        if (powerChanged) {
+            if (state.isOn) {
+                playBeep(1000, 0.08);
+                setTimeout(() => playBeep(1400, 0.10), 80);
+            } else {
+                playBeep(1400, 0.08);
+                setTimeout(() => playBeep(1000, 0.10), 80);
+            }
+        } else if (tempChanged) {
+            playBeep(state.targetTemp > s.targetTemp ? 2100 : 1700, 0.06);
+        } else if (modeChanged || speedChanged || ecoChanged || turboChanged || swingChanged) {
+            playBeep(1900, 0.06);
+        }
+        
+        updateUI();
+        
+    } else if (data.type === 'state_request') {
+        // Send our current state back to help the new peer synchronize
+        publishState('state_response');
+        
+    } else if (data.type === 'meow') {
+        playMeow();
+        const body = document.querySelector('.cat-body');
+        if (body) {
+            body.style.transform = 'scale(0.9) translateY(5px)';
+            setTimeout(() => {
+                body.style.transform = 'scale(1) translateY(0)';
+            }, 150);
+        }
+    } else if (data.type === 'ping') {
+        // Handled globally by tracking presence
+    }
+}
+
+// Track active users presence list
+function trackPresence(senderId) {
+    activeUsers[senderId] = Date.now();
+    updateUsersCountDisplay();
+}
+
+function updateUsersCountDisplay() {
+    // Clean up inactive users (no ping for 15 seconds)
+    const now = Date.now();
+    for (let user in activeUsers) {
+        if (user !== mySenderId && now - activeUsers[user] > 15000) {
+            delete activeUsers[user];
+        }
+    }
+    
+    const count = Object.keys(activeUsers).length;
+    
+    if (state.lang === 'ko') {
+        dom.activeUsersCount.textContent = `👥 ${count}명 접속 중`;
+    } else {
+        dom.activeUsersCount.textContent = `👥 ${count} Online`;
+    }
+}
+
+// Connect to the public secure MQTT WebSocket Broker
+function connectMultiplayer() {
+    updateNetworkStatus('connecting');
+    
+    // Disconnect existing client if connected
+    if (client) {
+        try {
+            client.end();
+        } catch (e) {}
+    }
+    
+    const clientId = 'ac_' + mySenderId + '_' + Math.floor(Math.random() * 100);
+    const options = {
+        clientId: clientId,
+        clean: true,
+        connectTimeout: 7000,
+        reconnectPeriod: 5000
+    };
+    
+    try {
+        // EMQX Public broker (wss secure connection)
+        client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', options);
+        
+        client.on('connect', () => {
+            console.log('Connected to multiplayer broker. Room:', state.roomId);
+            updateNetworkStatus('connected');
+            
+            const topic = `online-air-conditioner/rooms/${state.roomId}`;
+            client.subscribe(topic, (err) => {
+                if (err) {
+                    console.error('Subscription error:', err);
+                } else {
+                    // Send request to pull current state from any existing users in the room
+                    client.publish(topic, JSON.stringify({
+                        type: 'state_request',
+                        senderId: mySenderId
+                    }));
+                }
+            });
+        });
+        
+        client.on('message', (topic, message) => {
+            try {
+                const data = JSON.parse(message.toString());
+                handleIncomingMessage(data);
+            } catch (e) {
+                console.error('Failed to parse incoming payload:', e);
+            }
+        });
+        
+        client.on('close', () => {
+            updateNetworkStatus('offline');
+        });
+        
+        client.on('error', (err) => {
+            console.warn('MQTT Connection error:', err);
+            updateNetworkStatus('offline');
+        });
+        
+    } catch (e) {
+        console.error('Failed to initialize MQTT connection:', e);
+        updateNetworkStatus('offline');
+    }
+}
+
+// Broadcast periodic ping to keep peer presence maps fresh
+setInterval(() => {
+    if (client && client.connected) {
+        const topic = `online-air-conditioner/rooms/${state.roomId}`;
+        client.publish(topic, JSON.stringify({
+            type: 'ping',
+            senderId: mySenderId
+        }));
+    }
+    updateUsersCountDisplay();
+}, 8000);
+
+// Room switching event handler
+dom.roomInput.addEventListener('change', () => {
+    let newRoom = dom.roomInput.value.trim();
+    if (!newRoom) {
+        dom.roomInput.value = state.roomId;
+        return;
+    }
+    
+    triggerInteraction();
+    playBeep(2000, 0.05);
+    
+    // Update state and URL
+    state.roomId = newRoom;
+    window.history.pushState({}, '', `?room=${encodeURIComponent(newRoom)}`);
+    
+    // Clear other active users list when entering a new room
+    activeUsers = {};
+    activeUsers[mySenderId] = Date.now();
+    
+    // Connect to the new room topic
+    connectMultiplayer();
+});
+
+// Keypress enter on room input
+dom.roomInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        dom.roomInput.blur();
+    }
+});
+
+// Copy Invite Link to Clipboard
+dom.btnCopyRoom.addEventListener('click', () => {
+    triggerInteraction();
+    playBeep(2200, 0.05);
+    
+    const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${encodeURIComponent(state.roomId)}`;
+    
+    navigator.clipboard.writeText(inviteUrl).then(() => {
+        const originalIcon = dom.btnCopyRoom.textContent;
+        dom.btnCopyRoom.textContent = '✔️';
+        setTimeout(() => {
+            dom.btnCopyRoom.textContent = originalIcon;
+        }, 1500);
+    }).catch(err => {
+        console.error('Failed to copy room invite url:', err);
+    });
+});
+
+
+// --- REMOTE ACTION HANDLERS ---
 
 // Power toggles
 dom.btnPower.addEventListener('click', () => {
@@ -669,6 +932,7 @@ dom.btnPower.addEventListener('click', () => {
     }
     
     updateUI();
+    publishState();
 });
 
 // Temp Up
@@ -679,10 +943,11 @@ dom.btnTempUp.addEventListener('click', () => {
     if (state.targetTemp < 30) {
         state.targetTemp++;
         playBeep(2100, 0.06);
+        updateUI();
+        publishState();
     } else {
         playBeep(800, 0.15, 'triangle'); // Error tone
     }
-    updateUI();
 });
 
 // Temp Down
@@ -693,10 +958,11 @@ dom.btnTempDown.addEventListener('click', () => {
     if (state.targetTemp > 16) {
         state.targetTemp--;
         playBeep(1700, 0.06);
+        updateUI();
+        publishState();
     } else {
         playBeep(800, 0.15, 'triangle'); // Error tone
     }
-    updateUI();
 });
 
 // Mode switcher
@@ -710,6 +976,7 @@ dom.btnMode.addEventListener('click', () => {
     
     playBeep(1900, 0.06);
     updateUI();
+    publishState();
 });
 
 // Fan speed cycle
@@ -723,6 +990,7 @@ dom.btnSpeed.addEventListener('click', () => {
     
     playBeep(1900, 0.06);
     updateUI();
+    publishState();
 });
 
 // Swing flap
@@ -733,6 +1001,7 @@ dom.btnSwing.addEventListener('click', () => {
     state.isSwing = !state.isSwing;
     playBeep(1900, 0.06);
     updateUI();
+    publishState();
 });
 
 // Eco Mode
@@ -747,6 +1016,7 @@ dom.btnEco.addEventListener('click', () => {
     
     playBeep(2000, 0.06);
     updateUI();
+    publishState();
 });
 
 // Turbo Mode
@@ -761,6 +1031,7 @@ dom.btnTurbo.addEventListener('click', () => {
     
     playBeep(2200, 0.06);
     updateUI();
+    publishState();
 });
 
 // Ambient sound toggles
@@ -781,17 +1052,27 @@ dom.btnAmbient.addEventListener('click', () => {
     updateAmbientButtonText();
 });
 
-// Pet Interactions
+// Pet Interactions (Synced meow)
 dom.catContainer.addEventListener('click', () => {
     triggerInteraction();
     playMeow();
     
-    // Animate cat click
+    // Animate cat click locally
     const body = document.querySelector('.cat-body');
-    body.style.transform = 'scale(0.9) translateY(5px)';
-    setTimeout(() => {
-        body.style.transform = 'scale(1) translateY(0)';
-    }, 150);
+    if (body) {
+        body.style.transform = 'scale(0.9) translateY(5px)';
+        setTimeout(() => {
+            body.style.transform = 'scale(1) translateY(0)';
+        }, 150);
+    }
+    
+    // Broadcast meow to other clients
+    if (client && client.connected) {
+        client.publish(`online-air-conditioner/rooms/${state.roomId}`, JSON.stringify({
+            type: 'meow',
+            senderId: mySenderId
+        }));
+    }
 });
 
 
@@ -871,7 +1152,8 @@ setInterval(() => {
     
 }, 1000);
 
-// Initialize UI
+// Initialize UI and multiplayer setup
 setLanguage('ko');
 updateUI();
 updateClock();
+connectMultiplayer();
